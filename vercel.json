@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/pix.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/pix", "dest": "/api/pix.js" }
+  ]
+}
