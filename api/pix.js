@@ -1,7 +1,7 @@
 // api/pix.js — SigiloPay PIX (Vercel)
 
-const CLIENT_ID     = "projeto-ganhorapido_fdcs1fextlajr7jr";
-const CLIENT_SECRET = "72q9dox0b5vvg6vsinlavdo64ar0uyf582b0yixknfdb4n4cpupjcxkvmh7wmc8h";
+const CLIENT_ID     = process.env.SIGILOPAY_CLIENT_ID;
+const CLIENT_SECRET = process.env.SIGILOPAY_CLIENT_SECRET;
 const BASE_URL      = "https://app.sigilopay.com.br/api/v1";
 
 // Autenticação Basic Base64
@@ -19,13 +19,13 @@ module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  // ── GET /api/pix?id=xxx  →  consulta status ──────────────────────────────
+  // GET /api/pix?id=xxx — consulta status
   if (req.method === "GET") {
     const id = req.query && req.query.id;
     if (!id) return res.status(400).json({ error: "Informe ?id=..." });
 
     try {
-      const r    = await fetch(`${BASE_URL}/charges/${id}`, { headers: HEADERS });
+      const r    = await fetch(`${BASE_URL}/gateway/pix/receive/${id}`, { headers: HEADERS });
       const text = await r.text();
       let data;
       try { data = JSON.parse(text); } catch { data = { raw: text }; }
@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // ── POST /api/pix  →  gera cobrança PIX ──────────────────────────────────
+  // POST /api/pix — gera cobrança PIX
   if (req.method === "POST") {
     let body = req.body;
     if (typeof body === "string") {
@@ -43,25 +43,21 @@ module.exports = async function handler(req, res) {
     }
 
     const amount = body && body.amount;
-    if (!amount) return res.status(400).json({ error: "Informe o valor (amount)" });
+    if (!amount) return res.status(400).json({ error: "Informe o valor da doação" });
 
-    const amountInCents = Math.round(parseFloat(amount) * 100);
-
-    // Testa os dois formatos de payload mais comuns da SigiloPay
     const payload = {
-      amount:        amountInCents,
-      paymentMethod: "PIX",
-      customer: {
+      identifier: `anjos-${Date.now()}`,
+      amount:     parseFloat(amount),
+      client: {
         name:     "Doador Anônimo",
-        taxId:    "47742663087",
         email:    "doador@recantoanjos.com",
+        phone:    "(11) 99999-9999",
+        document: "47742663087",
       },
-      description: "Doação Recanto Anjos Peludos",
-      externalId:  `anjos-${Date.now()}`,
     };
 
     try {
-      const r    = await fetch(`${BASE_URL}/charges`, {
+      const r = await fetch(`${BASE_URL}/gateway/pix/receive`, {
         method:  "POST",
         headers: HEADERS,
         body:    JSON.stringify(payload),
@@ -74,9 +70,9 @@ module.exports = async function handler(req, res) {
       let data;
       try { data = JSON.parse(text); } catch {
         return res.status(500).json({
-          error: "SigiloPay retornou resposta inválida",
+          error:      "SigiloPay retornou resposta inválida",
           httpStatus: r.status,
-          raw: text.slice(0, 300),
+          raw:        text.slice(0, 300),
         });
       }
 
@@ -87,34 +83,16 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      // Normaliza campos — cobre todas as variações possíveis
-      const copyPaste =
-        data?.pix?.brCode        ||
-        data?.pix?.copyPaste     ||
-        data?.pix?.emv           ||
-        data?.pix?.qrcode        ||
-        data?.pixCopyPaste       ||
-        data?.copyPaste          ||
-        data?.brCode             ||
-        data?.emv                ||
-        data?.qrcode             ||
-        data?.code               ||
-        null;
-
-      const qrCode =
-        data?.pix?.qrCode        ||
-        data?.pix?.base64        ||
-        data?.pixQrCode          ||
-        data?.qrCode             ||
-        data?.qr_code            ||
-        null;
+      // Campos do retorno conforme documentação
+      const copyPaste = data?.pix?.code || null;
+      const qrCode    = data?.pix?.base64 || data?.pix?.image || null;
 
       return res.status(200).json({
-        id:         data.id,
-        status:     data.status,
+        id:        data.transactionId,
+        status:    data.status,
         copyPaste,
         qrCode,
-        raw:        data,
+        raw:       data,
       });
 
     } catch (err) {
