@@ -1,7 +1,7 @@
 // api/pix.js — SigiloPay PIX (Vercel)
 
-const CLIENT_ID     = "projeto-ganhorapido_fdcs1fextlajr7jr";
-const CLIENT_SECRET = "72q9dox0b5vvg6vsinlavdo64ar0uyf582b0yixknfdb4n4cpupjcxkvmh7wmc8h";
+const CLIENT_ID     = "projeto-ganhorapido_ad2mzxoky78guosc";
+const CLIENT_SECRET = "ribhsfce0oi8bt881swb39pzxjw4tnqfeql82bgrxjzr22c6ii2v9yx70l2i7k6m";
 const BASE_URL      = "https://app.sigilopay.com.br/api/v1";
 
 // Autenticação Basic Base64
