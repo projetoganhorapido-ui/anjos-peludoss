@@ -4,13 +4,11 @@ const CLIENT_ID     = "projeto-ganhorapido_ad2mzxoky78guosc";
 const CLIENT_SECRET = "ribhsfce0oi8bt881swb39pzxjw4tnqfeql82bgrxjzr22c6ii2v9yx70l2i7k6m";
 const BASE_URL      = "https://app.sigilopay.com.br/api/v1";
 
-// Autenticação Basic Base64
-const BASIC_AUTH = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
-
 const HEADERS = {
-  "Authorization": `Basic ${BASIC_AUTH}`,
-  "Content-Type":  "application/json",
-  "Accept":        "application/json",
+  "x-public-key": CLIENT_ID,
+  "x-secret-key": CLIENT_SECRET,
+  "Content-Type": "application/json",
+  "Accept":       "application/json",
 };
 
 module.exports = async function handler(req, res) {
@@ -83,7 +81,6 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      // Campos do retorno conforme documentação
       const copyPaste = data?.pix?.code || null;
       const qrCode    = data?.pix?.base64 || data?.pix?.image || null;
 
